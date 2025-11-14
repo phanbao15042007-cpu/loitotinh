@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Canvas "Y" / Heart — Demo</title>
+  <style>
+    html,body{height:100%;margin:0;background:#0e0b16;color:#fff;font-family:system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    #wrap{position:relative;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column}
+    canvas{display:block}
+    .ui{position:absolute;top:20px;left:20px;background:rgba(255,255,255,0.06);backdrop-filter:blur(4px);padding:12px;border-radius:10px}
+    input[type=password]{padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#fff}
+    button{margin-left:8px;padding:8px 10px;border-radius:6px;border:0;background:#ff4d81;color:#fff;cursor:pointer}
+    .msg{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.5);padding:12px 18px;border-radius:12px;font-weight:600;color:red;}
+    #loveText{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);max-width:500px;text-align:center;font-size:20px;line-height:1.4;color:red;display:none;z-index:1000;}
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <div id="daysMsg" style="position:fixed; bottom:20px; left:20px; font-size:22px; background:rgba(0,0,0,0.55); padding:12px 20px; border-radius:14px; z-index:999;">Đang tải...</div>
+    <canvas id="c"></canvas>
+    <div class="ui">
+      <label>Nhập mật khẩu (gợi ý: 1 từ ngắn): </label>
+      <input id="pw" type="password" placeholder="mật khẩu..." />
+      <button id="ok">Gửi</button>
+    </div>
+    <div id="hint" class="msg" style="display:none">Gửi thành công — Anh yêu em ❤️</div>
+    <div id="loveText">Hey girl!<br><br>Today is yours and so is every other day!<br>Give me a password to log into your heart :)<br>If anyone asks me what I like, I will answer out loud that I like you!<br>I love you for no reason, because you are yourself!<br>Having been with me for so long, have you liked me?<br>If you don’t mind, be my lover!<br>I won’t tell you that I like you.♥<br>Give me your answer! ♥<br>My heart sobs because of you!<br><br>♥ I love you ! ♥</div>
+  </div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W = canvas.width = window.innerWidth;
+let H = canvas.height = window.innerHeight;
+window.addEventListener('resize', ()=>{ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; });
+
+function heartPath(x,y,size){
+  const path = new Path2D();
+  const steps = 120;
+  for(let i=0;i<=steps;i++){
+    const t=Math.PI*2*i/steps;
+    const hx=16*Math.pow(Math.sin(t),3);
+    const hy=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+    const px=x+hx*size;
+    const py=y-hy*size;
+    if(i===0) path.moveTo(px,py); else path.lineTo(px,py);
+  }
+  path.closePath();
+  return path;
+}
+
+class SmallHeart{
+  constructor(x,y,scale,vel){this.x=x;this.y=y;this.scale=scale;this.vy=vel;this.vx=(Math.random()-0.5)*0.5;this.alpha=1;this.rot=(Math.random()-0.5)*0.02;}
+  step(){this.y+=this.vy;this.x+=this.vx;this.alpha-=0.004;this.scale*=0.999;}
+  draw(ctx){ctx.save();ctx.globalAlpha=Math.max(0,this.alpha);const p=heartPath(this.x,this.y,this.scale);ctx.fillStyle='rgba(255,77,129,'+this.alpha+')';ctx.fill(p);ctx.restore();}}
+
+let small=[]; let tick=0;
+function spawnSmall(){
+  const cx=W/2+(Math.random()-0.5)*80;
+  const cy=H/2+40+(Math.random()-0.5)*20;
+  small.push(new SmallHeart(cx,cy,0.9+Math.random()*0.6,-0.6-Math.random()*0.6));
+}
+
+function draw(){
+  tick++;
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#12021b');g.addColorStop(1,'#08101a');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  const cx=W/2,cy=H/2-30;const baseSize=Math.min(W,H)/80;const pulse=1+0.03*Math.sin(tick*0.08);const path=heartPath(cx,cy,baseSize*20*pulse);
+  ctx.save();ctx.shadowColor='rgba(255,77,129,0.45)';ctx.shadowBlur=40;ctx.fillStyle='rgba(255,77,129,0.95)';ctx.fill(path);ctx.restore();
+  ctx.save();ctx.globalCompositeOperation='lighter';const shine=heartPath(cx-10,cy-15,baseSize*12*(1+0.1*Math.sin(tick*0.12)));ctx.fillStyle='rgba(255,200,230,0.08)';ctx.fill(shine);ctx.restore();
+  ctx.save();ctx.fillStyle='rgba(255,255,255,0.95)';ctx.textAlign='center';ctx.font=Math.floor(baseSize*6)+'px Georgia';ctx.fillText('♥',cx,cy+baseSize*4);ctx.restore();
+  if(Math.random()<0.9) spawnSmall();
+  for(let i=small.length-1;i>=0;i--){small[i].step();small[i].draw(ctx);if(small[i].alpha<=0.02||small[i].y<-50) small.splice(i,1);}
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+
+function updateDays(){
+  const start=new Date(2025,6,7);
+  const now=new Date();
+  const diff=Math.floor((now-start)/(1000*60*60*24));
+  document.getElementById('daysMsg').textContent=`Hôm nay là ngày thứ ${diff} chúng ta bên nhau ❤️`;
+}
+setInterval(updateDays,1000);updateDays();
+
+const ok=document.getElementById('ok');
+const hint=document.getElementById('hint');
+const loveText=document.getElementById('loveText');
+const bgm=document.getElementById('bgm');
+ok.addEventListener('click',()=>{
+  const v=document.getElementById('pw').value.trim();
+  if(v==='1514'){
+    hint.textContent='Gửi thành công — Anh yêu em ❤️';hint.style.display='block';
+    hint.style.color='red';
+    loveText.style.display='block';
+    for(let i=0;i<120;i++) spawnSmall();
+    bgm.volume=0.7;bgm.play().catch(()=>{});
+    setTimeout(()=>hint.style.display='none',3500);
+  } else {
+    hint.textContent='Sai mật khẩu, thử từ khác 😉';hint.style.display='block';
+    hint.style.color='white';
+    setTimeout(()=>hint.style.display='none',2200);
+  }
+});
+document.getElementById('pw').addEventListener('keydown',(e)=>{if(e.key==='Enter') ok.click();});
+</script>
+<audio id="bgm" src="perfect.mp3" preload="auto"></audio>
+</body>
+</html>
